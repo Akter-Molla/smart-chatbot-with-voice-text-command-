@@ -1,0 +1,850 @@
+<!doctype html>
+    আক্তার মোল্লা স্মার্ট চ্যাটবট
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --akt-primary: #2563eb;
+            --akt-secondary: #1e40af;
+            --akt-accent: #f59e0b;
+            --akt-light: #f3f4f6;
+            --akt-dark: #1f2937;
+            --akt-text: #374151;
+            --akt-user-bg: #dbeafe;
+            --akt-bot-bg: #e5e7eb;
+            --akt-success: #10b981;
+            --akt-danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Noto Sans Bengali', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #f9fafb;
+        }
+
+        .akt-chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 380px;
+            max-width: calc(100% - 40px);
+            height: 500px;
+            max-height: 80vh;
+            z-index: 1000;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .akt-chat-widget {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e5e7eb;
+        }
+
+        .akt-chat-header {
+            background: linear-gradient(135deg, var(--akt-primary), var(--akt-secondary));
+            color: white;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .akt-chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background-color: var(--akt-light);
+            scroll-behavior: smooth;
+        }
+
+        .akt-message {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .akt-message.user {
+            align-items: flex-end;
+            margin-left: auto;
+        }
+
+        .akt-message.bot {
+            align-items: flex-start;
+            margin-right: auto;
+        }
+
+        .akt-message-content {
+            padding: 10px 14px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 14px;
+            color: var(--akt-text);
+        }
+
+        .akt-message.user .akt-message-content {
+            background: var(--akt-user-bg);
+            border-bottom-right-radius: 4px;
+        }
+
+        .akt-message.bot .akt-message-content {
+            background: var(--akt-bot-bg);
+            border-bottom-left-radius: 4px;
+        }
+
+        .akt-message-link {
+            color: var(--akt-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .akt-message-link:hover {
+            text-decoration: underline;
+        }
+
+        .akt-chat-footer {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: none;
+        }
+
+        .akt-input-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        #akt-chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        #akt-chat-input:focus {
+            border-color: var(--akt-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        #akt-chat-send {
+            background: var(--akt-primary);
+            color: white;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #akt-voice-btn {
+            background: white;
+            color: var(--akt-primary);
+            border: 1px solid var(--akt-primary);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #akt-voice-btn.listening {
+            background: var(--akt-primary);
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        .akt-user-info-form {
+            padding: 20px;
+            background: white;
+        }
+
+        .akt-user-info-form input {
+            width: 100%;
+            margin: 8px 0;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .akt-user-info-form button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        #akt-start-chat {
+            background: var(--akt-primary);
+            color: white;
+        }
+
+        #akt-start-chat:hover {
+            background: var(--akt-secondary);
+        }
+
+        #akt-start-anonymous-chat {
+            background: white;
+            color: var(--akt-text);
+            border: 1px solid #d1d5db;
+        }
+
+        #akt-start-anonymous-chat:hover {
+            background: #f9fafb;
+        }
+
+        #akt-toggle-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--akt-primary), var(--akt-secondary));
+            color: white;
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        #akt-toggle-button:hover {
+            transform: scale(1.05);
+        }
+
+        #akt-toggle-button i {
+            font-size: 22px;
+        }
+
+        .akt-typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: var(--akt-bot-bg);
+            border-radius: 18px;
+        }
+
+        .akt-typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--akt-text);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .akt-typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        .akt-typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .akt-typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        .akt-command-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .akt-command-list {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 16px;
+            padding: 8px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        .akt-command-item {
+            margin-bottom: 4px;
+            display: flex;
+        }
+
+        .akt-command-key {
+            font-weight: bold;
+            min-width: 120px;
+            color: var(--akt-primary);
+        }
+
+        .akt-command-desc {
+            flex: 1;
+        }
+
+        @media (max-width: 480px) {
+            .akt-chat-container {
+                width: calc(100% - 32px);
+                right: 16px;
+                bottom: 16px;
+                height: 70vh;
+            }
+            
+            #akt-toggle-button {
+                width: 50px;
+                height: 50px;
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+    </style>
+
+
+    <!-- Chat Widget -->
+    <div class="akt-chat-container">
+        <div class="akt-chat-widget">
+            <div class="akt-chat-header">
+                <div>
+                    <i class="fas fa-robot"></i> আক্তার মোল্লা স্মার্ট অ্যাসিস্ট্যান্ট
+                </div>
+                <button id="akt-close-chat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="akt-chat-body">
+                <div class="akt-message bot">
+                    <div class="akt-message-content">
+                        আসসালামু আলাইকুম! আমি আক্তার মোল্লা ব্লগের স্মার্ট অ্যাসিস্ট্যান্ট।<br /><br />
+                        আপনি টাইপ করে বা মাইক্রোফোনে কথা বলে প্রশ্ন করতে পারেন।<br />
+                        কমান্ড উদাহরণ:<br />
+                        "লিংক ওপেন কর", "OPEN 2", "হোমে যাও", "আল কোরআন বট চালু কর"
+                    </div>
+                </div>
+                <div class="akt-message bot">
+                    <div class="akt-message-content">
+                        <div class="akt-command-list">
+                            <div class="akt-command-item">
+                                <div class="akt-command-key">হোমে যাও / GO HOME</div>
+                                <div class="akt-command-desc">হোমপেজ খুলবে</div>
+                            </div>
+                            <div class="akt-command-item">
+                                <div class="akt-command-key">আল কোরআন বট চালু কর</div>
+                                <div class="akt-command-desc">কোরআন বট পেজ খুলবে</div>
+                            </div>
+                            <div class="akt-command-item">
+                                <div class="akt-command-key">ওপেন [নম্বর]</div>
+                                <div class="akt-command-desc">নির্দিষ্ট নম্বরের ফলাফল খুলবে</div>
+                            </div>
+                            <div class="akt-command-item">
+                                <div class="akt-command-key">সার্চ [কীওয়ার্ড]</div>
+                                <div class="akt-command-desc">নতুন সার্চ করবে</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="akt-chat-footer">
+                <div class="akt-input-container">
+                    <input id="akt-chat-input" placeholder="আপনার প্রশ্ন লিখুন বা বলুন..." type="text" />
+                    <button id="akt-voice-btn"><i class="fas fa-microphone"></i></button>
+                    <button id="akt-chat-send"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div class="akt-command-hint">
+                    কমান্ড ব্যবহার করুন: "হোমে যাও", "OPEN 2", "আল কোরআন বট চালু কর"
+                </div>
+            </div>
+            <div class="akt-user-info-form">
+                <input id="akt-input-name" placeholder="আপনার নাম (ঐচ্ছিক)" type="text" />
+                <input id="akt-input-email" placeholder="আপনার ইমেইল (ঐচ্ছিক)" type="email" />
+                <button id="akt-start-chat"><i class="fas fa-comment"></i> চ্যাট শুরু করুন</button>
+                <button id="akt-start-anonymous-chat"><i class="fas fa-user-secret"></i> নামহীন চ্যাট</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="akt-toggle-button">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+
+    <script>
+        // DOM Elements
+        const aktChatContainer = document.querySelector('.akt-chat-container');
+        const aktChatBody = document.querySelector('.akt-chat-body');
+        const aktChatInput = document.getElementById('akt-chat-input');
+        const aktChatSend = document.getElementById('akt-chat-send');
+        const aktVoiceBtn = document.getElementById('akt-voice-btn');
+        const aktToggleButton = document.getElementById('akt-toggle-button');
+        const aktCloseChat = document.getElementById('akt-close-chat');
+        const aktUserInfoForm = document.querySelector('.akt-user-info-form');
+        const aktInputName = document.getElementById('akt-input-name');
+        const aktInputEmail = document.getElementById('akt-input-email');
+        const aktStartChatButton = document.getElementById('akt-start-chat');
+        const aktStartAnonymousChatButton = document.getElementById('akt-start-anonymous-chat');
+
+        // Variables
+        let aktUserName = 'অতিথি';
+        let aktUserEmail = '';
+        let aktBlogData = [];
+        let aktIsTyping = false;
+        let aktRecognition;
+        let aktLastResults = [];
+
+        // Custom Commands
+        const aktCommands = {
+            // Basic commands
+            openLink: {
+                pattern: /(?:লিংক|link)\s*(?:ওপেন|open)/i,
+                handler: () => aktOpenResult(1)
+            },
+            openNumber: {
+                pattern: /(?:ওপেন|open)\s*(\d+)/i,
+                handler: (match) => aktOpenResult(parseInt(match[1]))
+            },
+            search: {
+                pattern: /(?:সার্চ|search)\s+(.+)/i,
+                handler: (match) => aktHandleSearch(match[1])
+            },
+            
+            // Custom page commands
+            goHome: {
+                pattern: /(?:হোমে যাও|go home)/i,
+                handler: () => {
+                    window.location.assign('https://aktermolla.blogspot.com');
+                    return "হোমপেজ খোলা হচ্ছে...";
+                }
+            },
+  gomyarticle: {
+                pattern: /(?:আমার কলাম | my article)/i,
+                handler: () => {
+                    window.location.assign('https://aktermolla.blogspot.com/search/label/%E0%A6%86%E0%A6%AE%E0%A6%BE%E0%A6%B0%20%E0%A6%95%E0%A6%B2%E0%A6%BE%E0%A6%AE');
+                    return "আমার কলাম পেজ খোলা হচ্ছে...";
+                }
+            },
+     toggleQuranBot: {
+        pattern: /(?:কোরআন বট চালো কর|open quran bot)/i,
+        handler: () => {
+            // গ্যাজেটের টগল বাটন খুঁজে ক্লিক করানো
+            const quranBotToggle = document.querySelector('#chatbot-toggle');
+            if (quranBotToggle) {
+                quranBotToggle.click();
+                return "আল কোরআন বট টগল করা হয়েছে";
+            } else {
+                return "আল কোরআন বট গ্যাজেট খুঁজে পাওয়া যায়নি";
+            }
+        }
+    }
+};
+
+
+        // Function to add new commands easily
+        function aktAddNewCommand(commandName, bnPattern, enPattern, actionFn, responseText) {
+            const pattern = new RegExp(`(?:${bnPattern}|${enPattern})`, 'i');
+            
+            aktCommands[commandName] = {
+                pattern: pattern,
+                handler: () => {
+                    actionFn();
+                    return responseText;
+                }
+            };
+            
+            // Add to command list UI
+            updateCommandListUI();
+        }
+
+        // Update command list in UI
+        function updateCommandListUI() {
+            const commandList = document.querySelector('.akt-command-list');
+            if (!commandList) return;
+            
+            // Clear existing commands (except the first one which is static)
+            while (commandList.children.length > 4) {
+                commandList.removeChild(commandList.lastChild);
+            }
+            
+            // Add dynamic commands
+            for (const [key, cmd] of Object.entries(aktCommands)) {
+                if (key === 'openLink' || key === 'openNumber' || key === 'search') continue;
+                
+                const pattern = cmd.pattern.toString();
+                const bnCommand = pattern.match(/\((.*?)\|/)[1];
+                const enCommand = pattern.match(/\|(.*?)\)/)[1];
+                
+                const commandItem = document.createElement('div');
+                commandItem.className = 'akt-command-item';
+                commandItem.innerHTML = `
+                    <div class="akt-command-key">${bnCommand} / ${enCommand}</div>
+                    <div class="akt-command-desc">${responseText}</div>
+                `;
+                
+                commandList.appendChild(commandItem);
+            }
+        }
+
+        // Initialize the chat
+        function aktInitChat() {
+            // Load saved data
+            const savedData = localStorage.getItem('aktChatData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                aktUserName = data.name || aktUserName;
+                aktUserEmail = data.email || '';
+                
+                if (data.chatStarted) {
+                    aktUserInfoForm.style.display = 'none';
+                    document.querySelector('.akt-chat-footer').style.display = 'block';
+                }
+            }
+            
+            // Initialize voice recognition
+            aktInitVoiceRecognition();
+            
+            // Fetch blog data
+            aktFetchBlogData();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Update command list
+            updateCommandListUI();
+        }
+
+        // Initialize voice recognition
+        function aktInitVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                aktRecognition = new webkitSpeechRecognition();
+                aktRecognition.continuous = false;
+                aktRecognition.interimResults = false;
+                aktRecognition.lang = 'bn-BD';
+                
+                aktRecognition.onstart = () => {
+                    aktVoiceBtn.classList.add('listening');
+                    aktAddMessage('bot', 'আপনার কথা শুনছি... বলুন');
+                };
+                
+                aktRecognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    aktChatInput.value = transcript;
+                    aktHandleUserInput(transcript);
+                };
+                
+                aktRecognition.onerror = (event) => {
+                    console.error('Voice recognition error:', event.error);
+                    aktAddMessage('bot', 'ভয়েস রেকগনিশনে সমস্যা হয়েছে। দয়া করে টাইপ করুন।');
+                };
+                
+                aktRecognition.onend = () => {
+                    aktVoiceBtn.classList.remove('listening');
+                };
+            } else {
+                aktVoiceBtn.style.display = 'none';
+                aktAddMessage('bot', 'দুঃখিত, আপনার ব্রাউজার ভয়েস ইনপুট সাপোর্ট করে না।');
+            }
+        }
+
+        // Fetch blog data from your site
+        async function aktFetchBlogData() {
+            try {
+                // Replace with your actual blog API endpoint
+                const response = await fetch('https://aktermolla.blogspot.com/feeds/posts/default?alt=json');
+                const data = await response.json();
+                
+                aktBlogData = data.feed.entry.map(post => ({
+                    id: post.id.$t,
+                    title: post.title.$t,
+                    link: post.link.find(l => l.rel === 'alternate').href,
+                    content: post.content.$t.replace(/<[^>]*>/g, ' '), // Remove HTML tags
+                    categories: post.category ? post.category.map(cat => cat.term) : [],
+                    published: post.published.$t
+                }));
+                
+                console.log('Loaded blog data:', aktBlogData.length, 'posts');
+            } catch (error) {
+                console.error('Error fetching blog data:', error);
+                aktAddMessage('bot', 'আমি বর্তমানে ব্লগ ডেটা লোড করতে পারিনি। পরে আবার চেষ্টা করুন।');
+            }
+        }
+
+        // Add message to chat
+        function aktAddMessage(who, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `akt-message ${who}`;
+            
+            messageDiv.innerHTML = `
+                <div class="akt-message-content">${message}</div>
+            `;
+            
+            aktChatBody.appendChild(messageDiv);
+            aktChatBody.scrollTop = aktChatBody.scrollHeight;
+        }
+
+        // Show typing indicator
+        function aktShowTyping() {
+            if (aktIsTyping) return;
+            
+            aktIsTyping = true;
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'akt-message bot';
+            typingDiv.innerHTML = `
+                <div class="akt-message-content">
+                    <div class="akt-typing-indicator">
+                        <div class="akt-typing-dot"></div>
+                        <div class="akt-typing-dot"></div>
+                        <div class="akt-typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            
+            aktChatBody.appendChild(typingDiv);
+            aktChatBody.scrollTop = aktChatBody.scrollHeight;
+            return typingDiv;
+        }
+
+        // Find relevant content from blog
+        function aktFindRelevantContent(query) {
+            if (!aktBlogData.length) return [];
+            
+            const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+            if (queryWords.length === 0) return [];
+            
+            const scoredPosts = aktBlogData.map(post => {
+                let score = 0;
+                
+                // Check title matches
+                const titleLower = post.title.toLowerCase();
+                score += queryWords.filter(w => titleLower.includes(w)).length * 3;
+                
+                // Check content matches
+                const contentLower = post.content.toLowerCase();
+                score += queryWords.filter(w => contentLower.includes(w)).length;
+                
+                // Check category matches
+                const categoriesLower = post.categories.map(c => c.toLowerCase());
+                score += queryWords.filter(w => 
+                    categoriesLower.some(c => c.includes(w))
+                ).length * 2;
+                
+                return { ...post, score };
+            }).filter(post => post.score > 0)
+              .sort((a, b) => b.score - a.score);
+            
+            aktLastResults = scoredPosts; // Store for command use
+            return scoredPosts.slice(0, 5); // Return top 5 matches
+        }
+
+        // Generate response based on query
+        function aktGenerateResponse(query) {
+            // First check for commands
+            for (const command of Object.values(aktCommands)) {
+                const match = query.match(command.pattern);
+                if (match) {
+                    return command.handler(match);
+                }
+            }
+            
+            // Otherwise search content
+            const relevantPosts = aktFindRelevantContent(query);
+            
+            if (relevantPosts.length === 0) {
+                return `আমি আপনার প্রশ্নের সাথে মিলে যাওয়া কোনো কন্টেন্ট পাইনি।<br>চেষ্টা করুন: "সার্চ [কীওয়ার্ড]" বা "লিংক ওপেন কর"`;
+            }
+            
+            let response = `আপনার প্রশ্নের সাথে সম্পর্কিত ফলাফল:<br><br>`;
+            
+            relevantPosts.forEach((post, index) => {
+                response += `<strong>${index + 1}. <a href="#" onclick="aktOpenResult(${index + 1})" class="akt-message-link">${post.title}</a></strong><br>`;
+                
+                // Find and show a relevant snippet
+                const queryWords = query.toLowerCase().split(/\s+/);
+                const contentLower = post.content.toLowerCase();
+                let snippet = '';
+                
+                for (const word of queryWords) {
+                    if (word.length < 3) continue;
+                    const pos = contentLower.indexOf(word);
+                    if (pos > -1) {
+                        const start = Math.max(0, pos - 30);
+                        const end = Math.min(post.content.length, pos + word.length + 70);
+                        snippet = post.content.substring(start, end).trim() + '...';
+                        break;
+                    }
+                }
+                
+                if (!snippet) {
+                    snippet = post.content.substring(0, 100).trim() + '...';
+                }
+                
+                response += `${snippet}<br><br>`;
+            });
+            
+            response += `<small>কমান্ড ব্যবহার করুন: "OPEN 1", "লিংক ওপেন"</small>`;
+            
+            return response;
+        }
+
+        // Open a specific search result
+        function aktOpenResult(number) {
+            if (!aktLastResults.length) {
+                aktAddMessage('bot', 'কোনো ফলাফল পাওয়া যায়নি। প্রথমে কিছু সার্চ করুন।');
+                return;
+            }
+            
+            const index = number - 1;
+            if (index >= 0 && index < aktLastResults.length) {
+                const post = aktLastResults[index];
+                window.open(post.link, '_blank');
+                aktAddMessage('bot', `ওপেন করা হয়েছে: <strong>${post.title}</strong>`);
+            } else {
+                aktAddMessage('bot', `দুঃখিত, ${number} নাম্বার ফলাফল পাওয়া যায়নি।`);
+            }
+        }
+
+        // Handle search command
+        function aktHandleSearch(query) {
+            aktChatInput.value = query;
+            aktHandleUserInput(query);
+        }
+
+        // Handle user input (text or voice)
+        function aktHandleUserInput(input) {
+            if (!input.trim()) return;
+            
+            // Add user message
+            aktAddMessage('user', input);
+            aktChatInput.value = '';
+            
+            // Show typing indicator
+            const typingIndicator = aktShowTyping();
+            
+            // Generate and show response after a short delay
+            setTimeout(() => {
+                aktChatBody.removeChild(typingIndicator);
+                const response = aktGenerateResponse(input);
+                aktAddMessage('bot', response);
+                aktIsTyping = false;
+            }, 1500);
+        }
+
+        // Save chat data to localStorage
+        function aktSaveChatData() {
+            const chatData = {
+                name: aktInputName.value.trim(),
+                email: aktInputEmail.value.trim(),
+                chatStarted: aktUserInfoForm.style.display === 'none'
+            };
+            localStorage.setItem('aktChatData', JSON.stringify(chatData));
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Send message on button click
+            aktChatSend.addEventListener('click', () => aktHandleUserInput(aktChatInput.value.trim()));
+            
+            // Send message on Enter key
+            aktChatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') aktHandleUserInput(aktChatInput.value.trim());
+            });
+            
+            // Voice input button
+            aktVoiceBtn.addEventListener('click', () => {
+                if (aktVoiceBtn.classList.contains('listening')) {
+                    aktRecognition.stop();
+                } else {
+                    aktRecognition.start();
+                }
+            });
+            
+            // Start chat with name/email
+            aktStartChatButton.addEventListener('click', () => {
+                aktUserName = aktInputName.value.trim() || 'অতিথি';
+                aktUserEmail = aktInputEmail.value.trim() || '';
+                startChat();
+            });
+            
+            // Start anonymous chat
+            aktStartAnonymousChatButton.addEventListener('click', () => {
+                aktUserName = 'অতিথি';
+                aktUserEmail = '';
+                startChat();
+            });
+            
+            // Toggle chat visibility
+            aktToggleButton.addEventListener('click', () => {
+                aktChatContainer.style.display = aktChatContainer.style.display === 'block' ? 'none' : 'block';
+            });
+            
+            // Close chat
+            aktCloseChat.addEventListener('click', () => {
+                aktChatContainer.style.display = 'none';
+            });
+        }
+
+        // Start the chat
+        function startChat() {
+            aktUserInfoForm.style.display = 'none';
+            document.querySelector('.akt-chat-footer').style.display = 'block';
+            aktAddMessage('bot', `ধন্যবাদ ${aktUserName}! আপনার প্রশ্ন জিজ্ঞাসা করতে পারেন।`);
+            aktSaveChatData();
+        }
+
+        // Initialize the chat when page loads
+        document.addEventListener('DOMContentLoaded', aktInitChat);
+
+        // Make functions available globally for HTML onclick
+        window.aktOpenResult = aktOpenResult;
+
+        // EXAMPLE: How to add new commands - UNCOMMENT TO USE
+        /*
+        aktAddNewCommand(
+            'openFacebook', // Command ID
+            'ফেসবুক খোলো', // Bengali pattern
+            'open facebook', // English pattern
+            () => { window.open('https://facebook.com/aktermolla', '_blank'); }, // Action
+            'ফেসবুক পেজ খোলা হচ্ছে...' // Response message
+        );
+        */
+    </script>
+
+</!doctype>
